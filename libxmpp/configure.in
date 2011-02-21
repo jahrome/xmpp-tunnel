@@ -1,0 +1,43 @@
+AC_INIT(libxmpp, 0.1, adrien.pinet@gmail.com)
+AM_CONFIG_HEADER([config.h])
+AM_INIT_AUTOMAKE(libxmpp, 0.1)
+
+# Checks for programs.
+AC_PROG_CXX
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_LIBTOOL
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
+
+# Checks for libraries.
+
+case "$host" in
+*-*-linux*)
+	CPPFLAGS="$CPPFLAGS -Wall -ansi -pedantic -D__LINUX__"
+	CPPFLAGS="$CPPFLAGS -I../../libcommon/src"
+	;;
+
+*-*-*darwin*)
+	CPPFLAGS="$CPPFLAGS -Wall -ansi -pedantic -D__APPLE__"
+	CPPFLAGS="$CPPFLAGS -I../../libcommon/src"
+	;;
+esac
+
+AC_HEADER_STDC
+AC_CHECK_HEADERS([expat.h])
+
+# Checks for header files.
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_HEADER_STDBOOL
+AC_C_CONST
+
+# Checks for library functions.
+
+
+AC_CONFIG_FILES([Makefile
+                 src/Makefile])
+AC_OUTPUT
