@@ -22,6 +22,8 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <cstring>
+#include <cstdio>
 #include <termios.h>
 
 #include <common/CObject.h>

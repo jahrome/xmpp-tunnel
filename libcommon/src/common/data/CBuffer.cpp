@@ -21,6 +21,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <string>
+#include <cstring>
 
 #include <common/CException.h>
 #include <common/CObject.h>

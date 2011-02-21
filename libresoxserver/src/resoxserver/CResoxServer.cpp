@@ -87,6 +87,9 @@ void CResoxServer::Run(const CJid* pJid, const CTCPAddress* pTCPAddress, CRsaKey
 		while(XMPPInstMsg.Receive(&Stanza))
 		{
 			// we drop all unhandled stanza
+			// TODO: this was needed to appear online on client connection
+			//	 need to investigate more on this issue
+			XMPPInstMsg.SendPresenceToAll("available", "remote shell over xmpp - server", "0");
 		}
 
 		XEPsshd.Detach();

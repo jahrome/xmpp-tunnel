@@ -20,12 +20,15 @@
 
 #include <iostream>
 #include <stdio.h>
+#include <cstring>
 
 #include "CAuthentication.h"
 #include <pwd.h>
 
 #ifdef __LINUX__
+#ifndef __ANDROID__
 #include <shadow.h>
+#endif// __ANDROID__
 #endif// __LINUX__
 
 using namespace std;
@@ -41,8 +44,9 @@ CAuthentication::~CAuthentication()
 bool CAuthentication::Authenticate(const string& userName, const string& password)
 {	
 	#ifdef __LINUX__
-	if(!AuthenticateOnShadow(userName, password))
-	return false;
+	// TODO: support SHA512 auth, disabled for now
+	//if(!AuthenticateOnShadow(userName, password))
+	//return false;
 	#endif// __LINUX__
 
 	#ifdef __APPLE__
@@ -82,6 +86,14 @@ const CObject::u32 CAuthentication::GetGID() const
 
 void CAuthentication::SetAttributes(const string& userName)
 {
+#ifdef __ANDROID__
+	this->userName = "root";
+	uid = 0;
+	gid = 0;
+	homePath = "/data/local";
+	shell = "/system/xbin/bash";
+
+#else
 	passwd* pPassword = getpwnam(userName.c_str());
 
 	if(pPassword == NULL)
@@ -92,10 +104,17 @@ void CAuthentication::SetAttributes(const string& userName)
 	gid = pPassword->pw_gid;
 	homePath = pPassword->pw_dir; 
 	shell = pPassword->pw_shell;
+#endif// __ANDROID__
 }
 
 #ifdef __LINUX__
 
+#ifdef __ANDROID__
+bool CAuthentication::AuthenticateOnShadow(const string& userName, const string& password)
+{
+	return true;
+}
+#else
 bool CAuthentication::AuthenticateOnShadow(const string& userName, const string& password)
 {
 	spwd* pPassword = getspnam(userName.c_str());
@@ -108,6 +127,7 @@ bool CAuthentication::AuthenticateOnShadow(const string& userName, const string&
 
 	return true;
 }
+#endif// __ANDROID__
 
 #endif// __LINUX__
 

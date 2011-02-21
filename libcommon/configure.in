@@ -19,6 +19,10 @@ case "$host" in
 	CPPFLAGS="$CPPFLAGS -Wall -ansi -pedantic -D__LINUX__"
 	;;
 
+arm-*-*)
+	CPPFLAGS="$CPPFLAGS -D__LINUX__ -D__ANDROID__"
+	;;
+
 *-*-*darwin*)
 	CPPFLAGS="$CPPFLAGS -Wall -ansi -pedantic -D__APPLE__"
 	;;

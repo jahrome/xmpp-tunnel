@@ -20,6 +20,11 @@ case "$host" in
 	CPPFLAGS="$CPPFLAGS -I../../libcommon/src"
 	;;
 
+arm-*-*)
+	CPPFLAGS="$CPPFLAGS -D__LINUX__ -D__ANDROID__"
+	CPPFLAGS="$CPPFLAGS -I../../libcommon/src"
+	;;
+
 *-*-*darwin*)
 	CPPFLAGS="$CPPFLAGS -Wall -ansi -pedantic -D__APPLE__"
 	CPPFLAGS="$CPPFLAGS -I../../libcommon/src"

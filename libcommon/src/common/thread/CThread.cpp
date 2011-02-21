@@ -142,7 +142,9 @@ void CThread::Stop()
 		if(!IsRunning())
 		return;
 
+#ifndef __ANDROID__
 		pthread_cancel(thread);
+#endif// __ANDROID__
 		Wait();
 	}
 

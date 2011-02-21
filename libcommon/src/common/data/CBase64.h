@@ -39,7 +39,7 @@ public:
 	void To64(CBuffer* pBufferIn, string& strOut);
 	void To64(CBuffer* pBufferIn, CBuffer* pBufferOut);
 	void From64(const string& strIn, CBuffer* pBufferOut);
-	void From64(CBuffer* pBufferOut, CBuffer* pBufferOut);
+	void From64(CBuffer* pBufferIn, CBuffer* pBufferOut);
 	
 private :
 	int GetOffset(char car);

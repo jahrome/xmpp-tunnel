@@ -20,6 +20,8 @@
 
 #include <iostream>
 #include <string>
+#include <cstring>
+#include <cstdio>
 
 #include <common/CObject.h>
 #include <common/CException.h>

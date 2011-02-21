@@ -197,7 +197,7 @@ void CTLSConnection::Secure()
 		SSLeay_add_ssl_algorithms();
 		SSL_load_error_strings();
 		
-		meth = SSLv3_client_method();
+		meth = (SSL_METHOD*)SSLv3_client_method();
 		
 		if(meth == NULL)
 		throw CTLSConnectionException(CTLSConnectionException::TLSCEC_SECUREERROR);

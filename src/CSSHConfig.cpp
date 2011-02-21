@@ -21,6 +21,8 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <cstring>
+#include <cstdio>
 #include <sstream>
 #include <termios.h>
 

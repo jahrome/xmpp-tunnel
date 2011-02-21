@@ -74,10 +74,25 @@ void CRsaKey::GenerateKey(u16 keySize, u32 exponent)
 {
 	try
 	{
-		if(pRsa != NULL)
-		RSA_free(pRsa);
-			
-		pRsa = RSA_generate_key(keySize, exponent, NULL, NULL);
+		BN_GENCB cb;
+		int i;
+		BIGNUM *e = BN_new();
+		if(!pRsa || !e)
+			throw CRsaKeyException(CRsaKeyException::RKEC_GENERATEKEYERROR);
+
+		/* The problem is when building with 8, 16, or 32 BN_ULONG,
+		 * unsigned long can be larger */
+		for (i=0; i<(int)sizeof(unsigned long)*8; i++)
+			{
+			if (exponent & (1UL<<i))
+				if (BN_set_bit(e,i) == 0)
+					throw CRsaKeyException(CRsaKeyException::RKEC_GENERATEKEYERROR);
+			}
+
+		BN_GENCB_set_old(&cb, NULL, NULL);
+
+		RSA_generate_key_ex(pRsa, keySize, e, &cb);
+		BN_free(e);
 	}
 	
 	catch(exception& e)

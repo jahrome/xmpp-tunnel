@@ -26,6 +26,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <sstream>
+#include <iostream>
+#include <termios.h>
 
 #include <common/CException.h>
 #include <common/CObject.h>
@@ -140,23 +143,26 @@ bool CVirtualShell::SetShellSize(int row, int col, int xpixel, int ypixel)
 
 	w.ws_row = row;
 	w.ws_col = col;
-    w.ws_xpixel = xpixel;
+	w.ws_xpixel = xpixel;
 	w.ws_ypixel = ypixel;
 
 	return ioctl(fdMaster, TIOCSWINSZ, &w) == 0;
 }
 
 int CVirtualShell::OpenMaster()
-{int fdMaster;
+{
 	// Trying to open /dev/ptmx
-	/*	
-	int fdMaster = open("/dev/ptmx", O_RDWR);
 
+	int fdMaster = open("/dev/ptmx", O_RDWR);
+	#ifdef __DEBUG__
 	cout << "PTMX:" << fdMaster << endl;
+	#endif //__DEBUG__
 	if(fdMaster > 0)
 	return fdMaster;
+	#ifdef __DEBUG__
 	cout << "PTMX ERROR" << endl;
-	*/	
+	#endif //__DEBUG__
+
 	char pty[11];
 	// Trying to open ptyXY with X = [p-sP-S] and Y = [a-z0-9]
 	

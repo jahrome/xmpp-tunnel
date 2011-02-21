@@ -22,7 +22,6 @@
 #include <sstream>
 #include <string>
 
-#include <string>
 #include <vector>
 
 #include <common/CException.h>
@@ -569,7 +568,7 @@ const char* CXEPsshdException::what() const throw()
 		return "CXEPsshd::InShellJob() error";
 
 	case XEPSSHDEC_OUTSHELLJOBERROR:
-		return "CXEPsshd::InShellJob() error";
+		return "CXEPsshd::OutShellJob() error";
 
 	default:
 		return "CXEPsshd: Unknown error";

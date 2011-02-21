@@ -1,1 +1,1 @@
-SUBDIRS = libcommon libxmpp libresoxserver src
+SUBDIRS = libcommon libxmpp libresox libresoxserver src
