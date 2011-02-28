@@ -16,7 +16,7 @@ AC_CANONICAL_HOST
 
 case "$host" in
 *-*-linux*)
-	CPPFLAGS="$CPPFLAGS -Wall -ansi -pedantic -D__LINUX__"
+	CPPFLAGS="$CPPFLAGS -Wall -pedantic -D__LINUX__"
 	;;
 
 arm-*-*)

@@ -1,0 +1,16 @@
+Source: xmpp-tunnel
+Section: net
+Priority: extra
+Maintainer: Jerome Marty <jmy@laposte.net>
+Build-Depends: debhelper (>= 7.0.50~)
+Standards-Version: 3.8.4
+Homepage: http://jahrome.free.fr/index.php/xmpp-tunnel-ip-tunnelling-xmpp-android-ssh
+Vcs-Git: git://github.com/jahrome/xmpp-tunnel.git
+Vcs-Browser: https://github.com/jahrome/xmpp-tunnel
+
+Package: xmpp-tunnel
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: IP tunneling over XMPP
+ Creates an IP tunnel between to XMPP clients.
+ .

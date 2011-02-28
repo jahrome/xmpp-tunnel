@@ -25,7 +25,6 @@
 
 #include <common/CObject.h>
 #include <common/CException.h>
-#include <common/crypto/rsa/CRsaKey.h>
 #include <common/socket/tcp/CTCPAddress.h>
 #include <common/thread/CThread.h>
 
@@ -42,11 +41,12 @@ class CResox : public CObject
 {
 public:
 	CResox();
+	CResox(const string pAddress, const string pMask);
 	~CResox();
 	
 	void ConnectTo(const CJid& xmppJid, const CTCPAddress& rTCPAddress);
-	void ConnectToSSH(const CJid& sshJid, CRsaKey* pAuthServerKey);
-	void Login(const string& userName, const string& password);
+	void ConnectToSSH(const CJid& sshJid);
+	void Login();
 
 	void StartRosterEvent(CRoster* pRoster);
 	bool OnRosterUpdated(CRoster* pRoster);
@@ -56,8 +56,6 @@ public:
 	static void* InShellJob(void* pvThis) throw();
 	static void* OutShellJob(void* pvThis) throw();
 	
-	static void InterceptSignal(int signal);
-	
 private:
 	CJid xmppJid;
 	CJid sshJid;
@@ -65,6 +63,8 @@ private:
 	CXMPPInstMsg XMPPInstMsg;	
 	CXEPdisco XEPdisco;
 	CXEPssh XEPssh;
+
+	int tun_fd;
 	
 	CThread ThreadInShellJob;
 	CThread ThreadOutShellJob;

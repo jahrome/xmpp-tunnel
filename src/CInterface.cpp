@@ -59,6 +59,7 @@ CInterface::~CInterface()
 const CJid& CInterface::SelectHost()
 {
 	int h, w;
+	sleep(0.5);
 	pMainWin = initscr();
 	curs_set(0);
 	noecho();
@@ -104,12 +105,12 @@ const CJid& CInterface::SelectHost()
 			index++;
 		}
 		
-		if(key == KEY_RIGHT)
+		if(key == 'c')
 		{
 			Jid = Roster.GetItem(index).GetJid();
 			pResox->StopRosterEvent();	
-			ThreadDisplayHostJob.Wait();
 			endwin();
+			ThreadDisplayHostJob.Wait();
 			return Jid;
 		}
 	}
@@ -130,7 +131,6 @@ void CInterface::RequestPassword(const string& message, string& password)
 	memcpy(&new_tty, &old_tty, sizeof(termios));
 
 	new_tty.c_lflag &= ~(ICANON | ECHO);
-	//new_tty.c_cc[VTIME] = 600 * 10;
 	new_tty.c_cc[VMIN] = 1;
 
 	tcsetattr(0, TCSANOW, &new_tty);

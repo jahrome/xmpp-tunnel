@@ -27,7 +27,6 @@
 #include <CSSHConfig.h>
 #include <CInterface.h>
 
-#include <common/crypto/rsa/CRsaKey.h>
 #include <common/socket/tcp/CTCPAddress.h>
 
 #include <resox/CResox.h>
@@ -37,11 +36,11 @@
 
 int main(int argc, char** argv)
 {
-	CJid xmppJid, sshJid;
+	CJid xmppJid, tunnelJid;
 	CTCPAddress HostAddress;
 	CSSHConfig SSHConfig;
 
-	string fileName = "ssh.xml";
+	string fileName = "xmpp-tunnel.xml";
 
 	try
 	{
@@ -59,67 +58,22 @@ int main(int argc, char** argv)
 	{
 		xmppJid = SSHConfig.GetJid();
 		HostAddress = SSHConfig.GetHostAddress();
-		
+
 		// connection to the jabber server
-		CResox Resox;
+		CResox Resox(SSHConfig.GetAddress(), SSHConfig.GetMask());
 		cout << "connecting to " << HostAddress.GetHostName() << ":" << HostAddress.GetPort()  << " ... " << flush;
 		Resox.ConnectTo(&xmppJid, &HostAddress);
 		cout << "done" << endl;
-		
+
 		// requesting which entities to connect				
 		CInterface Interface(&Resox);
-		sshJid = Interface.SelectHost();
 
-		// we are connecting to the sshd server				
-		CRsaKey AuthServerKey;
-		cout << "checking signature on " << sshJid.GetShort() << "..." << endl;
-		Resox.ConnectToSSH(sshJid, &AuthServerKey);		
+		tunnelJid = Interface.SelectHost();
 
-		CBuffer FingerPrint;
-		AuthServerKey.GetFingerPrint(&FingerPrint);
+		// we are connecting to the xmpp-tunneld server				
+		Resox.ConnectToSSH(tunnelJid);
 
-		cout << " RSA PubKey fingerprint [";
-		for(CObject::u32 i = 0 ; i < FingerPrint.GetBufferSize() ; i++)
-		printf("%X", FingerPrint.GetByte());
-		cout << "]" << endl;
-
-		// we check his public key
-		CSSHConfig::KeyStatus keyStatus = SSHConfig.IsExistPubKey(sshJid, AuthServerKey);	
-
-		if(keyStatus == CSSHConfig::KS_KNOWN)
-		{
-			cout << "Authenticated" << endl;
-		}
-		
-		if(keyStatus == CSSHConfig::KS_UNKNOWN)
-		{
-			cout << "!!! UNKNOWN HOST !!!" << endl;			
-			string answere;
-			Interface.RequestString("Add this key to KeyRing ? [Y/N]:", answere);
-			
-			if(answere == "Y" || answere == "y")
-			{
-				SSHConfig.AddPubKey(sshJid, AuthServerKey);
-				SSHConfig.Save(fileName);
-			}
-			else
-			return 0;
-		}
-		
-		if(keyStatus == CSSHConfig::KS_CHANGED)
-		{
-			cout << "!!!!!!!!!!!!!! SSHD PUBLIC KEY HAS CHANGED !!!!!!!!!!!!!!" << endl;			
-			cout << " Active man in the middle attack possible" << endl;			
-
-			return 0;
-		}
-
-		// we get the username/password		
-		string userName, password;
-		Interface.RequestString("username: ", userName);
-		Interface.RequestPassword("password: ", password);
-	
-		Resox.Login(userName, password);
+		Resox.Login();
 		cout << "Connection Closed" << endl;
 		return 0;
 	}

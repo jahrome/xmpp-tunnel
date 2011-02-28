@@ -1,0 +1,27 @@
+This work was packaged for Debian by:
+
+    Jerome Marty <jmy@laposte.net> on Mon, 28 Feb 2011 17:53:46 +0100
+
+It was downloaded from:
+
+    <https://github.com/jahrome/xmpp-tunnel>
+
+Upstream Author(s):
+
+    <Jerome Marty jmy@laposte.net>
+    <Adrien Pinet adrien.pinet@gmail.com>
+
+Copyright:
+
+    <Copyright (C) 2011 Jerome Marty>
+
+License:
+
+    <GNU General Public License (version 2 or later)>
+
+The Debian packaging is:
+
+    Copyright (C) 2011 Jerome Marty <jmy@laposte.net>
+
+and is licensed under the GPL version 3,
+see "/usr/share/common-licenses/GPL-3".

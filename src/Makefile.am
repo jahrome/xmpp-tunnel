@@ -1,9 +1,9 @@
-bin_PROGRAMS = xmpp-sshd xmpp-ssh
-xmpp_sshd_SOURCES = xmpp-sshd.cpp \
-		 CSSHDConfig.cpp \
-		 CSSHDConfig.h
+bin_PROGRAMS = xmpp-tunneld xmpp-tunnel
+xmpp_tunneld_SOURCES = xmpp-tunneld.cpp \
+		 CSSHConfig.cpp \
+		 CSSHConfig.h
 
-xmpp_ssh_SOURCES = xmpp-ssh.cpp \
+xmpp_tunnel_SOURCES = xmpp-tunnel.cpp \
 		 CInterface.cpp \
 		 CInterface.h \
 		 CSSHConfig.cpp \

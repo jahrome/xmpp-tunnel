@@ -26,7 +26,6 @@
 
 #include <common/CException.h>
 #include <common/CObject.h>
-#include <common/crypto/rsa/CRsaKey.h>
 #include <common/socket/tcp/CTCPAddress.h>
 #include <common/xml/CXMLNode.h>
 
@@ -37,24 +36,17 @@ using namespace std;
 class CSSHConfig : public CObject
 {
 public:
-	enum KeyStatus
-	{
-		KS_KNOWN,
-		KS_UNKNOWN,
-		KS_CHANGED
-	};
-
 	CSSHConfig();
 	virtual ~CSSHConfig();
  	
 	void Interactive(const string& fileName);
+	void SetPassword(string password);
 	void Save(const string& fileName);
+	string GetAddress();
+	string GetMask();
 
 	const CJid& GetJid(){return Jid;}
 	const CTCPAddress& GetHostAddress(){return HostAddress;}
-
-	void AddPubKey(const CJid& rJid, const CRsaKey& rRsaKey);
-	KeyStatus IsExistPubKey(const CJid& rJid, const CRsaKey& rRsaKey);
 
 protected:
 	void Load(const string& fileName);
@@ -71,9 +63,11 @@ private:
 
 private:
 	CXMLNode ConfigNode;
-	CRsaKey RsaKey;
 	CJid Jid;
 	CTCPAddress HostAddress;
+	string Password;
+	string Address;
+	string Mask;
 };
 
 class CSSHConfigException : public CException

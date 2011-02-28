@@ -26,9 +26,8 @@
 
 #include <common/CObject.h>
 #include <common/CException.h>
-#include <common/crypto/rsa/CRsa.h>
 
-#include <CSSHDConfig.h>
+#include <CSSHConfig.h>
 #include <common/socket/tcp/CTCPAddress.h>
 #include <xmpp/jid/CJid.h>
 #include <resoxserver/CResoxServer.h>
@@ -36,15 +35,20 @@
 
 int main(int argc, char** argv)
 {
-	string fileName = "sshd.xml";
-	CSSHDConfig SSHDConfig;
+	string fileName = "xmpp-tunneld.xml";
+	CSSHConfig SSHConfig;
 	CJid Jid;
 	CTCPAddress TCPAddress;	
+
+	if (argc == 2)
+	{
+		SSHConfig.SetPassword(argv[1]);
+	}
 		
 	try
 	{	
-		SSHDConfig.Interactive(fileName);
-		SSHDConfig.Save(fileName);
+		SSHConfig.Interactive(fileName);
+		SSHConfig.Save(fileName);
 	}
 	
 	catch(exception& e)
@@ -55,11 +59,11 @@ int main(int argc, char** argv)
 		
 	try
 	{
-		Jid = SSHDConfig.GetJid();
-		TCPAddress = SSHDConfig.GetHostAddress();
+		Jid = SSHConfig.GetJid();
+		TCPAddress = SSHConfig.GetHostAddress();
 
-		CResoxServer ResoxServer;
-		ResoxServer.Run(&Jid, &TCPAddress, SSHDConfig.GetRsaKey());
+		CResoxServer ResoxServer(SSHConfig.GetAddress(), SSHConfig.GetMask());
+		ResoxServer.Run(&Jid, &TCPAddress);
 
 		return 0;
 	}

@@ -6,10 +6,6 @@ libcommon_a_SOURCES = common/CException.cpp                    \
 		      common/CObject.h                         \
 		      common/crypto/aes/CAes.cpp               \
 		      common/crypto/aes/CAes.h                 \
-		      common/crypto/rsa/CRsa.cpp               \
-		      common/crypto/rsa/CRsa.h                 \
-		      common/crypto/rsa/CRsaKey.cpp            \
-		      common/crypto/rsa/CRsaKey.h              \
 		      common/data/CBase64.cpp                  \
 		      common/data/CBase64.h                    \
 		      common/data/CBuffer.cpp                  \
@@ -31,5 +27,6 @@ libcommon_a_SOURCES = common/CException.cpp                    \
 		      common/xml/CXMLNode.cpp                  \
                       common/xml/CXMLNode.h                    \
 		      common/xml/CXMLParser.cpp                \
-                      common/xml/CXMLParser.h
- 
+                      common/xml/CXMLParser.h                  \
+		      common/tun/tun.cpp                       \
+		      common/tun/tun.h

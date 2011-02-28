@@ -1,0 +1,27 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/autotools.mk
+
+VER=$(shell dpkg-parsechangelog | sed -rne 's,^Version: ([^-]+).*,\1,p')
+get-orig-source:
+	rm -rf xmpp-tunnel-$(VER).orig
+	git clone http://github.com/jahrome/xmpp-tunnel xmpp-tunnel-$(VER).orig
+	cd xmpp-tunnel-$(VER).orig
+	rm -r xmpp-tunnel-$(VER).orig/.git
+	GZIP=--best tar -cz --owner root --group root --mode a+rX \
+			-f xmpp-tunnel_$(VER).orig.tar.gz \
+			xmpp-tunnel-$(VER).orig
+	rm -r xmpp-tunnel-$(VER).orig
+
+makebuilddir/xmpp-tunnel::
+	autoreconf

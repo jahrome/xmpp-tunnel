@@ -29,7 +29,6 @@
 #include <common/CObject.h>
 #include <common/CException.h>
 #include <common/crypto/aes/CAes.h>
-#include <common/crypto/rsa/CRsaKey.h>
 #include <common/data/CBuffer.h>
 #include <common/data/CBase64.h>
 #include <common/xml/CXMLNode.h>
@@ -42,6 +41,11 @@ using namespace std;
 CSSHConfig::CSSHConfig()
 {
 
+}
+
+void CSSHConfig::SetPassword(string password)
+{
+	Password = password;
 }
 
 CSSHConfig::~CSSHConfig()
@@ -58,38 +62,19 @@ CSSHConfig::~CSSHConfig()
 	}
 }
 
-void CSSHConfig::Interactive(const string& fileName)
+void CSSHConfig::Load(const string& fileName)
 {
 	try
 	{
-		string password;
+		fstream FileIn;
+		u32 fileSize = GetFileSize(fileName);
+		CBuffer Buffer(fileSize);
+
+		FileIn.open(fileName.c_str(), ios::in);
+		FileIn.read((char*) Buffer.GetBuffer(), (long)Buffer.GetBufferSize());
+		FileIn.close();
 		
-		if(IsFileExists(fileName))
-		{
-			RequestPassword("[" + fileName + "] Password: ", password);
-			Load(fileName);
-		}
-		else
-		{
-			string password1, password2;
-			bool isMatch = false;
-
-			while(!isMatch)
-			{
-				RequestPassword("[" + fileName + "] Enter a new password: ", password1);
-				RequestPassword("[" + fileName + "] Reenter the password: ", password2);
-
-				if(password1 != password2)
-				cout << "! passwords are differents !" << endl;
-				else
-				isMatch = true;
-			}
-			
-			password = password1;
-		}
-
-		BuildMissing();
-		CheckForHostSetting(password);
+		CXMLParser::Parse(&Buffer, &ConfigNode);
 	}
 
 	catch(exception& e)
@@ -98,11 +83,9 @@ void CSSHConfig::Interactive(const string& fileName)
 		cerr << e.what() << endl;
 		#endif //__DEBUG__
 		
-		throw CSSHConfigException(CSSHConfigException::SSHDCEC_INTERACTIVEERROR);
+		throw CSSHConfigException(CSSHConfigException::SSHDCEC_LOADERROR);
 	}
 }
-
-
 
 void CSSHConfig::Save(const string& fileName)
 {
@@ -136,7 +119,6 @@ void CSSHConfig::RequestPassword(const string& message, string& password)
 	memcpy(&new_tty, &old_tty, sizeof(termios));
 
 	new_tty.c_lflag &= ~(ICANON | ECHO);
-//	new_tty.c_cc[VTIME] = 600 * 10;
 	new_tty.c_cc[VMIN] = 1;
 
 	tcsetattr(0, TCSANOW, &new_tty);
@@ -161,17 +143,17 @@ void CSSHConfig::BuildMissing()
 {
 	try
 	{
-		CXMLNode* pKeyRingNode;
-
 		CXMLNode* pHostSettingNode;
 		CXMLNode* pJidNode;
 		CXMLNode* pHostNode;
 		CXMLNode* pPortNode;
 		CXMLNode* pPasswordNode;
+		CXMLNode* pAddressNode;
+		CXMLNode* pMaskNode;
 		
-		if(ConfigNode.GetName() != "xmpp-ssh")
+		if(ConfigNode.GetName() != "xmpp-tunnel")
 		{
-			ConfigNode.SetName("xmpp-ssh");
+			ConfigNode.SetName("xmpp-tunnel");
 			ConfigNode.SetAttribut("version", "0.1");			
 		}
 
@@ -209,54 +191,24 @@ void CSSHConfig::BuildMissing()
 			pHostSettingNode->PushChild(pPasswordNode);
 		}
 		
-
-		
-		if(!ConfigNode.IsExistChild("keyring"))
+		if(!pHostSettingNode->IsExistChild("address"))
 		{
-			pKeyRingNode = new CXMLNode("keyring");
-			ConfigNode.PushChild(pKeyRingNode);
+			pAddressNode = new CXMLNode("address");
+			pHostSettingNode->PushChild(pAddressNode);
 		}
 		else
 		{
-			pKeyRingNode = ConfigNode.GetChild("keyring");
+			pAddressNode = pHostSettingNode->GetChild("address");
 		}
 		
-		for(u32 i = 0 ; i < pKeyRingNode->GetNumChild() ; i++)
+		if(!pHostSettingNode->IsExistChild("mask"))
 		{
-			CXMLNode* pItemNode = pKeyRingNode->GetChild(i);
-		
-			if(pItemNode->GetName() == "item")
-			{
-				if(!pItemNode->IsExistChild("jid"))
-				{
-					CXMLNode* pJidNode = new CXMLNode("jid");
-					pItemNode->PushChild(pJidNode);
-				}
-				
-				CXMLNode* pPubKeyNode;
-				
-				if(!pItemNode->IsExistChild("pubkey"))
-				{
-					pPubKeyNode = new CXMLNode("pubkey");
-					pItemNode->PushChild(pPubKeyNode);
-				}
-				else
-				{
-					pPubKeyNode = pItemNode->GetChild("pubkey");
-				}
-				
-				if(!pPubKeyNode->IsExistChild("n"))
-				{
-					CXMLNode* pNNode = new CXMLNode("n");
-					pPubKeyNode->PushChild(pNNode);
-				}
-
-				if(!pPubKeyNode->IsExistChild("e"))
-				{
-					CXMLNode* pENode = new CXMLNode("e");
-					pPubKeyNode->PushChild(pENode);
-				}
-			}
+			pMaskNode = new CXMLNode("mask");
+			pHostSettingNode->PushChild(pMaskNode);
+		}
+		else
+		{
+			pMaskNode = pHostSettingNode->GetChild("mask");
 		}
 	}
 
@@ -279,7 +231,9 @@ void CSSHConfig::CheckForHostSetting(const string& password)
 		CXMLNode* pHostNode = pHostSettingNode->GetChild("host");
 		CXMLNode* pPortNode = pHostSettingNode->GetChild("port");
 		CXMLNode* pPasswordNode = pHostSettingNode->GetChild("encrypted-password");
-		
+		CXMLNode* pAddressNode = pHostSettingNode->GetChild("address");
+		CXMLNode* pMaskNode = pHostSettingNode->GetChild("mask");
+
 		if(pJidNode->GetData().empty())
 		{
 			string jid;
@@ -335,7 +289,19 @@ void CSSHConfig::CheckForHostSetting(const string& password)
 			pPasswordNode->SetData(encPass64.c_str(), encPass64.size());
 		}
 	
+		if(pAddressNode->GetData().empty())
+		{
+			RequestString("[Host setting] Enter local address: ", Address);
+
+			pAddressNode->SetData(Address.c_str(), Address.size());
+		}
 	
+		if(pMaskNode->GetData().empty())
+		{
+			RequestString("[Host setting] Enter netmask: ", Mask);
+
+			pMaskNode->SetData(Mask.c_str(), Mask.size());
+		}
 	
 		CBase64 Base64;
 		string pass64;
@@ -362,6 +328,9 @@ void CSSHConfig::CheckForHostSetting(const string& password)
 		
 		HostAddress.SetHostName(pHostNode->GetData());
 		HostAddress.SetPort(port);
+
+		Address = pAddressNode->GetData();
+		Mask = pMaskNode->GetData();
 	}
 	
 	catch(exception& e)
@@ -374,80 +343,47 @@ void CSSHConfig::CheckForHostSetting(const string& password)
 	}
 }
 
-void CSSHConfig::AddPubKey(const CJid& rJid, const CRsaKey& rRsaKey)
+void CSSHConfig::Interactive(const string& fileName)
 {
-	CXMLNode* pKeyRingNode = ConfigNode.GetChild("keyring");
-	
-	// we create the new item structure
-	CXMLNode* pItemNode = new CXMLNode("item");
-	CXMLNode* pJidNode = new CXMLNode("jid");
-	CXMLNode* pPubKeyNode = new CXMLNode("pubkey");
-	CXMLNode* pENode = new CXMLNode("e");
-	CXMLNode* pNNode = new CXMLNode("n");
-		
-	pPubKeyNode->PushChild(pENode);
-	pPubKeyNode->PushChild(pNNode);
-
-	pItemNode->PushChild(pPubKeyNode);
-	pItemNode->PushChild(pJidNode);
-
-	pKeyRingNode->PushChild(pItemNode);
-	
-	// we build the item values
-	CBase64 Base64;
-	string NBase64, EBase64;
-	CBuffer NBuffer, EBuffer;
-	
-	rRsaKey.GetN(&NBuffer);
-	rRsaKey.GetE(&EBuffer);
-
-	Base64.To64(&NBuffer, NBase64);
-	Base64.To64(&EBuffer, EBase64);
-
-	pNNode->SetData(NBase64.c_str(), NBase64.size());
-	pENode->SetData(EBase64.c_str(), EBase64.size());
-	pJidNode->SetData(rJid.GetShort().c_str(), rJid.GetShort().size());
-}
-
-CSSHConfig::KeyStatus CSSHConfig::IsExistPubKey(const CJid& rJid, const CRsaKey& rRsaKey)
-{
-	CXMLNode* pKeyRingNode = ConfigNode.GetChild("keyring");
-
-	for(u32 i = 0 ; i < pKeyRingNode->GetNumChild() ; i++)
+	try
 	{
-		CXMLNode* pItemNode = pKeyRingNode->GetChild(i);
-		CXMLNode* pJidNode = pItemNode->GetChild("jid");
-		
-		if(pJidNode->GetData() == rJid.GetShort())
+		if(IsFileExists(fileName))
 		{
-			CXMLNode* pPubKeyNode = pItemNode->GetChild("pubkey");
-			CXMLNode* pENode = pPubKeyNode->GetChild("e");
-			CXMLNode* pNNode = pPubKeyNode->GetChild("n");
-		
-			CBase64 Base64;
-			CBuffer NBuffer1, EBuffer1;
-			CBuffer NBuffer2, EBuffer2;
-	
-			Base64.From64(pENode->GetData(), &EBuffer1);
-			Base64.From64(pNNode->GetData(), &NBuffer1);
-	
-			rRsaKey.GetN(&NBuffer2);
-			rRsaKey.GetE(&EBuffer2);
-		
-			if(NBuffer1.GetBufferSize() != NBuffer2.GetBufferSize())
-			return KS_CHANGED;
-		
-			for(u32 i = 0 ; i < NBuffer1.GetBufferSize() ; i++)
+			if (Password.size() == 0)
+				RequestPassword("[" + fileName + "] Password: ", Password);
+			Load(fileName);
+		}
+		else
+		{
+			string password1, password2;
+			bool isMatch = false;
+
+			while(!isMatch)
 			{
-				if(NBuffer1.GetByte() != NBuffer2.GetByte())
-				return KS_CHANGED;
+				RequestPassword("[" + fileName + "] Enter a new password: ", password1);
+				RequestPassword("[" + fileName + "] Reenter the password: ", password2);
+
+				if(password1 != password2)
+				cout << "! passwords are differents !" << endl;
+				else
+				isMatch = true;
 			}
 			
-			return KS_KNOWN;
+			Password = password1;
 		}
+
+		BuildMissing();
+		CheckForHostSetting(Password);
 	}
 
-	return KS_UNKNOWN;
+	catch(exception& e)
+	{
+		#ifdef __DEBUG__
+		cerr << e.what() << endl;
+		#endif //__DEBUG__
+		
+		throw CSSHConfigException(CSSHConfigException::SSHDCEC_INTERACTIVEERROR);
+	}
 }
 
 bool CSSHConfig::IsFileExists(const string& fileName)
@@ -491,29 +427,14 @@ CObject::u32 CSSHConfig::GetFileSize(const string& fileName)
 	}
 }
 
-void CSSHConfig::Load(const string& fileName)
+string CSSHConfig::GetAddress()
 {
-	try
-	{
-		fstream FileIn;
-		u32 fileSize = GetFileSize(fileName);
-		CBuffer Buffer(fileSize);
+	return Address;
+}
 
-		FileIn.open(fileName.c_str(), ios::in);
-		FileIn.read((char*) Buffer.GetBuffer(), (long)Buffer.GetBufferSize());
-		FileIn.close();
-		
-		CXMLParser::Parse(&Buffer, &ConfigNode);
-	}
-
-	catch(exception& e)
-	{
-		#ifdef __DEBUG__
-		cerr << e.what() << endl;
-		#endif //__DEBUG__
-		
-		throw CSSHConfigException(CSSHConfigException::SSHDCEC_LOADERROR);
-	}
+string CSSHConfig::GetMask()
+{
+	return Mask;
 }
 
 CSSHConfigException::CSSHConfigException(int code) : CException(code)
@@ -537,5 +458,5 @@ const char* CSSHConfigException::what() const throw()
 
 	default:
 		return "CSSHConfig: unknown error";
-	}	
+	}
 }

@@ -1,7 +1,7 @@
-AC_INIT(xmpp-ssh, 0.1, adrien.pinet@gmail.com)
+AC_INIT(xmpp-tunnel, 0.1, jahrome11@gmail.com)
 
 AM_CONFIG_HEADER([config.h])
-AM_INIT_AUTOMAKE(xmpp-ssh, 0.1)
+AM_INIT_AUTOMAKE(xmpp-tunnel, 0.1)
 
 # Checks for programs.
 AC_PROG_CXX

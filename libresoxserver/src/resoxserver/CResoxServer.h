@@ -26,7 +26,6 @@
 #include <common/CObject.h>
 #include <common/CException.h>
 #include <common/thread/CThread.h>
-#include <common/crypto/rsa/CRsaKey.h>
 
 #include <xmpp/core/CHandler.h>
 #include <xmpp/im/CXMPPInstMsg.h>
@@ -40,17 +39,21 @@ class CResoxServer : public CObject
 {
 public:
 	CResoxServer();
+	CResoxServer(const string pAddress, const string pMask);
 	virtual ~CResoxServer();
 
-	void Run(const CJid* pJid, const CTCPAddress* pTCPAddress, CRsaKey& rRsaServerKey);
+	void Run(const CJid* pJid, const CTCPAddress* pTCPAddress);
 	void Stop();
 
 		
-private:
 	CXMPPInstMsg XMPPInstMsg;
 	
 	CXEPdisco XEPdisco;
+	const CJid* Jid;
+	const CTCPAddress* TCPAddress;
+private:
 	CXEPsshd XEPsshd;
+	int TunFd;
 };
 
 class CResoxServerException : public CException

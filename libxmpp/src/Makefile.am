@@ -54,38 +54,8 @@ libxmpp_a_SOURCES = xmpp/core/CHandler.cpp \
                     xmpp/xep/ssh/CXEPssh.h \
                     xmpp/xep/ssh/CXEPsshd.cpp \
                     xmpp/xep/ssh/CXEPsshd.h \
-                    xmpp/xep/ssh/auth/CAuthentication.cpp \
-                    xmpp/xep/ssh/auth/CAuthentication.h \
-                    xmpp/xep/ssh/node/CSessionAuthClientDoneNode.cpp \
-                    xmpp/xep/ssh/node/CSessionAuthClientDoneNode.h \
                     xmpp/xep/ssh/node/CSessionShellDataNode.cpp \
                     xmpp/xep/ssh/node/CSessionShellDataNode.h \
-                    xmpp/xep/ssh/node/CSessionAuthClientFeaturesGetNode.cpp \
-                    xmpp/xep/ssh/node/CSessionAuthClientFeaturesGetNode.h \
-                    xmpp/xep/ssh/node/CSessionAuthClientFeaturesResultNode.cpp \
-                    xmpp/xep/ssh/node/CSessionAuthClientFeaturesResultNode.h \
-                    xmpp/xep/ssh/node/CSessionAuthClientStartNode.cpp \
-                    xmpp/xep/ssh/node/CSessionAuthClientStartNode.h \
-                    xmpp/xep/ssh/node/CSessionAuthServerDoneNode.cpp \
-                    xmpp/xep/ssh/node/CSessionAuthServerDoneNode.h \
-                    xmpp/xep/ssh/node/CSessionAuthServerFeaturesGetNode.cpp \
-                    xmpp/xep/ssh/node/CSessionAuthServerFeaturesGetNode.h \
-                    xmpp/xep/ssh/node/CSessionAuthServerFeaturesResultNode.cpp \
-                    xmpp/xep/ssh/node/CSessionAuthServerFeaturesResultNode.h \
-                    xmpp/xep/ssh/node/CSessionAuthServerStartNode.cpp \
-                    xmpp/xep/ssh/node/CSessionAuthServerStartNode.h \
-                    xmpp/xep/ssh/node/CSessionKeyExchangeFeaturesGetNode.cpp \
-                    xmpp/xep/ssh/node/CSessionKeyExchangeFeaturesGetNode.h \
-                    xmpp/xep/ssh/node/CSessionKeyExchangeFeaturesResultNode.cpp \
-                    xmpp/xep/ssh/node/CSessionKeyExchangeFeaturesResultNode.h \
-		    xmpp/xep/ssh/node/CSessionKeyExchangeDoNode.cpp \
-		    xmpp/xep/ssh/node/CSessionKeyExchangeDoNode.h \
-		    xmpp/xep/ssh/node/CSessionKeyExchangeDoneNode.cpp \
-		    xmpp/xep/ssh/node/CSessionKeyExchangeDoneNode.h \
-		    xmpp/xep/ssh/node/CSessionKeyExchangeStartNode.cpp \
-		    xmpp/xep/ssh/node/CSessionKeyExchangeStartNode.h \
-		    xmpp/xep/ssh/virtualshell/CVirtualShell.cpp \
-		    xmpp/xep/ssh/virtualshell/CVirtualShell.h \
                     xmpp/xep/xibb/CXEPxibb.cpp \
                     xmpp/xep/xibb/CXEPxibb.h \
                     xmpp/xep/xibb/CChannel.cpp \

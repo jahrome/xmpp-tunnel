@@ -27,9 +27,6 @@
 
 #include <common/CException.h>
 #include <common/CObject.h>
-#include <common/crypto/aes/CAes.h>
-#include <common/crypto/rsa/CRsa.h>
-#include <common/crypto/rsa/CRsaKey.h>
 #include <common/data/CBase64.h>
 #include <common/thread/CMutex.h>
 #include <common/thread/CThread.h>
@@ -40,19 +37,6 @@
 #include <xmpp/core/CXMLFilter.h>
 #include <xmpp/core/CXMPPCore.h>
 #include <xmpp/xep/ssh/CXEPssh.h>
-#include <xmpp/xep/ssh/node/CSessionAuthServerFeaturesGetNode.h>
-#include <xmpp/xep/ssh/node/CSessionAuthServerFeaturesResultNode.h>
-#include <xmpp/xep/ssh/node/CSessionAuthServerStartNode.h>
-#include <xmpp/xep/ssh/node/CSessionAuthServerDoneNode.h>
-#include <xmpp/xep/ssh/node/CSessionAuthClientFeaturesGetNode.h>
-#include <xmpp/xep/ssh/node/CSessionAuthClientFeaturesResultNode.h>
-#include <xmpp/xep/ssh/node/CSessionAuthClientStartNode.h>
-#include <xmpp/xep/ssh/node/CSessionAuthClientDoneNode.h>
-#include <xmpp/xep/ssh/node/CSessionKeyExchangeFeaturesGetNode.h>
-#include <xmpp/xep/ssh/node/CSessionKeyExchangeFeaturesResultNode.h>
-#include <xmpp/xep/ssh/node/CSessionKeyExchangeDoNode.h>
-#include <xmpp/xep/ssh/node/CSessionKeyExchangeDoneNode.h>
-#include <xmpp/xep/ssh/node/CSessionKeyExchangeStartNode.h>
 #include <xmpp/xep/ssh/node/CSessionShellDataNode.h>
 #include <xmpp/xep/xibb/CXEPxibb.h>
 
@@ -132,16 +116,13 @@ void CXEPssh::Detach()
 	}
 }
 
-void CXEPssh::ConnectToSSH(const CJid& rRemoteJid, CRsaKey* pAuthServerKey)
+void CXEPssh::ConnectToSSH(const CJid& rRemoteJid)
 {
 	try
 	{
 		RemoteJid = rRemoteJid;
 		
 		XEPxibb.OpenChannel(RemoteJid, &channelId);
-		
-		SessionKeyExchange();
-		SessionAuthServer(pAuthServerKey);
 	}
 	
 	catch(exception& e)
@@ -177,21 +158,6 @@ const CJid& CXEPssh::GetRemoteJid() const
 	return RemoteJid;
 }
 
-void CXEPssh::SetShellSize(u32 row, u32 column, u32 xpixel, u32 ypixel)
-{
-	CBuffer Buffer, EncryptedBuffer;
-	CSessionShellDataNode SessionShellDataNode;
-	
-	SessionShellDataNode.SetRow(row);
-	SessionShellDataNode.SetColumn(column);
-	SessionShellDataNode.SetX(xpixel);
-	SessionShellDataNode.SetY(ypixel);
-
-	SessionShellDataNode.Build(&Buffer);
-	AesOnShell.Encrypt(Buffer, &EncryptedBuffer);
-	XEPxibb.SendStreamData(RemoteJid, channelId, shellSid, &EncryptedBuffer);
-}
-
 
 void CXEPssh::SendData(CBuffer* pBuffer)
 {
@@ -206,8 +172,7 @@ void CXEPssh::SendData(CBuffer* pBuffer)
 		SessionShellDataNode.SetData(DataBase64.c_str(), DataBase64.size());
 
 		SessionShellDataNode.Build(&Buffer);
-		AesOnShell.Encrypt(Buffer, &EncryptedBuffer);
-		XEPxibb.SendStreamData(RemoteJid, channelId, shellSid, &EncryptedBuffer);
+		XEPxibb.SendStreamData(RemoteJid, channelId, shellSid, &Buffer);
 	}
 	
 	catch(exception& e)
@@ -228,8 +193,8 @@ void CXEPssh::ReceiveData(CBuffer* pBuffer)
 		CBuffer Buffer, EncryptedBuffer;
 		CSessionShellDataNode SessionShellDataNode;
 
-		XEPxibb.ReceiveStreamData(RemoteJid, channelId, shellSid, &EncryptedBuffer);
-		AesOnShell.Decrypt(EncryptedBuffer, &Buffer);		
+		XEPxibb.ReceiveStreamData(RemoteJid, channelId, shellSid, &Buffer);
+
 		CXMLParser::Parse(&Buffer, &SessionShellDataNode);
 		Base64.From64(SessionShellDataNode.GetData(), pBuffer);
 	}
@@ -244,149 +209,11 @@ void CXEPssh::ReceiveData(CBuffer* pBuffer)
 	}
 }
 
-void CXEPssh::SessionKeyExchange()
-{
-	try
-	{		
-		CBuffer Buffer;
-		CSessionKeyExchangeFeaturesGetNode SessionKeyExchangeFeaturesGetNode;
-		CSessionKeyExchangeFeaturesResultNode SessionKeyExchangeFeaturesResultNode;
-		CSessionKeyExchangeStartNode SessionKeyExchangeStartNode;
-		CSessionKeyExchangeDoNode SessionKeyExchangeDoNode;
-		CSessionKeyExchangeDoneNode SessionKeyExchangeDoneNode;
 
-		// we request the keyexchange features 
-		SessionKeyExchangeFeaturesGetNode.Build(&Buffer);
-		XEPxibb.SendChannelData(RemoteJid, channelId, &Buffer);
-		
-		XEPxibb.ReceiveChannelData(RemoteJid, channelId, &Buffer);
-		CXMLParser::Parse(&Buffer, &SessionKeyExchangeFeaturesResultNode);
-		
-		// we negociate the shared key
-		SessionKeyExchangeStartNode.Build(&Buffer);
-		XEPxibb.SendChannelData(RemoteJid, channelId, &Buffer);	
-		
-		XEPxibb.ReceiveChannelData(RemoteJid, channelId, &Buffer);
-		CXMLParser::Parse(&Buffer, &SessionKeyExchangeDoNode);
-		
-		CRsaKey RsaKey;
-		CBuffer PlainKey1, PlainKey2, EncryptedKey2, SessionKey;
-		
-		SessionKeyExchangeDoNode.GetPublicKey(&RsaKey);
-		SessionKeyExchangeDoNode.GetPlainKey1(&PlainKey1);
-
-		CRsa::GenerateChallenge(32, &PlainKey2);
-		CRsa::EncryptChallenge(RsaKey, PlainKey2, &EncryptedKey2);
-		
-		SessionKeyExchangeDoneNode.SetEncryptedKey2(EncryptedKey2);
-		
-		SessionKeyExchangeDoneNode.Build(&Buffer);
-		XEPxibb.SendChannelData(RemoteJid, channelId, &Buffer);
-		
-		SessionKey.Create(32);
-
-		for(u8 i = 0 ; i < SessionKey.GetBufferSize() ; i++)
-		SessionKey.Write((u8) (PlainKey1.GetBuffer()[i] ^ PlainKey2.GetBuffer()[i]));
-		
-		AesOnShell.SetKey(SessionKey);
-		AesOnChannel.SetKey(SessionKey);
-	}
-	
-	catch(exception& e)
-	{
-		#ifdef __DEBUG__
-		cerr << e.what() << endl;
-		#endif //__DEBUG__
-
-		throw CXEPsshException(CXEPsshException::XEPSSHEC_SESSIONKEYEXCHANGEERROR);
-	}
-}
-
-void CXEPssh::SessionAuthServer(CRsaKey* pAuthServerKey)
+void CXEPssh::Login()
 {
 	try
 	{
-		CBuffer DataBuffer, EncryptedDataBuffer;
-
-		CSessionAuthServerFeaturesGetNode SessionAuthServerFeaturesGetNode;
-		CSessionAuthServerFeaturesResultNode SessionAuthServerFeaturesResultNode;
-		CSessionAuthServerStartNode SessionAuthServerStartNode;
-		CSessionAuthServerDoneNode SessionAuthServerDoneNode;
-
-		// we request the auth server features 
-		SessionAuthServerFeaturesGetNode.Build(&DataBuffer);
-		AesOnChannel.Encrypt(DataBuffer, &EncryptedDataBuffer);
-		XEPxibb.SendChannelData(RemoteJid, channelId, &EncryptedDataBuffer);
-		
-		XEPxibb.ReceiveChannelData(RemoteJid, channelId, &EncryptedDataBuffer);
-		AesOnChannel.Decrypt(EncryptedDataBuffer, &DataBuffer);
-		CXMLParser::Parse(&DataBuffer, &SessionAuthServerFeaturesResultNode);
-		
-		SessionAuthServerFeaturesResultNode.GetPublicKey(pAuthServerKey);
-		
-		// we send a challenge and check the signature
-		CBuffer Challenge, Signature;
-
-		CRsa::GenerateChallenge(50, &Challenge);
-		SessionAuthServerStartNode.SetChallenge(Challenge);
-
-		SessionAuthServerStartNode.Build(&DataBuffer);
-		AesOnChannel.Encrypt(DataBuffer, &EncryptedDataBuffer);
-		XEPxibb.SendChannelData(RemoteJid, channelId, &EncryptedDataBuffer);	
-		
-		XEPxibb.ReceiveChannelData(RemoteJid, channelId, &EncryptedDataBuffer);
-		AesOnChannel.Decrypt(EncryptedDataBuffer, &DataBuffer);
-		CXMLParser::Parse(&DataBuffer, &SessionAuthServerDoneNode);
-
-		SessionAuthServerDoneNode.GetSignature(&Signature);
-
-		if(!CRsa::VerifyChallenge(*pAuthServerKey, Challenge, Signature))
-		throw CXEPsshException(CXEPsshException::XEPSSHEC_SESSIONAUTHSERVERERROR);
-	}
-	
-	catch(exception& e)
-	{
-		#ifdef __DEBUG__
-		cerr << e.what() << endl;
-		#endif //__DEBUG__
-
-		throw CXEPsshException(CXEPsshException::XEPSSHEC_SESSIONAUTHSERVERERROR);
-	}
-}
-
-void CXEPssh::Login(const string& userName, const string& password)
-{
-	try
-	{
-		CBuffer DataBuffer, EncryptedDataBuffer;
-
-		CSessionAuthClientFeaturesGetNode SessionAuthClientFeaturesGetNode;
-		CSessionAuthClientFeaturesResultNode SessionAuthClientFeaturesResultNode;
-		CSessionAuthClientStartNode SessionAuthClientStartNode;
-		CSessionAuthClientDoneNode SessionAuthClientDoneNode;
-
-		// we request the auth client features 
-		SessionAuthClientFeaturesGetNode.Build(&DataBuffer);
-		AesOnChannel.Encrypt(DataBuffer, &EncryptedDataBuffer);
-		XEPxibb.SendChannelData(RemoteJid, channelId, &EncryptedDataBuffer);
-		
-		XEPxibb.ReceiveChannelData(RemoteJid, channelId, &EncryptedDataBuffer);
-		AesOnChannel.Decrypt(EncryptedDataBuffer, &DataBuffer);
-		CXMLParser::Parse(&DataBuffer, &SessionAuthClientFeaturesResultNode);
-				
-		// we the username/password
-		SessionAuthClientStartNode.SetUserName(userName);
-		SessionAuthClientStartNode.SetPassword(password);
-
-		SessionAuthClientStartNode.Build(&DataBuffer);
-		AesOnChannel.Encrypt(DataBuffer, &EncryptedDataBuffer);
-		XEPxibb.SendChannelData(RemoteJid, channelId, &EncryptedDataBuffer);	
-		
-		XEPxibb.ReceiveChannelData(RemoteJid, channelId, &EncryptedDataBuffer);
-		AesOnChannel.Decrypt(EncryptedDataBuffer, &DataBuffer);
-		CXMLParser::Parse(&DataBuffer, &SessionAuthClientDoneNode);
-		
-		// we waiting an opening shell stream
 		XEPxibb.OpenStream(RemoteJid, channelId, &shellSid);
 	}
 	
@@ -436,12 +263,6 @@ const char* CXEPsshException::what() const throw()
 
 	case XEPSSHEC_SETSHELLSIZEERROR:
 		return "CXEPssh::SetShellSize() error";
-
-	case XEPSSHEC_SESSIONKEYEXCHANGEERROR:
-		return "CXEPssh::SessionKeyExchange() error";
-
-	case XEPSSHEC_SESSIONAUTHSERVERERROR:
-		return "CXEPssh::SessionAuthServer() error";
 
 	case XEPSSHEC_SESSIONAUTHCLIENTERROR:
 		return "CXEPssh::SessionAuthClient() error";

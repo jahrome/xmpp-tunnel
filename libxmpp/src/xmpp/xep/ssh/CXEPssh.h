@@ -26,9 +26,6 @@
 
 #include <common/CException.h>
 #include <common/CObject.h>
-#include <common/crypto/aes/CAes.h>
-#include <common/crypto/rsa/CRsa.h>
-#include <common/crypto/rsa/CRsaKey.h>
 
 #include <xmpp/core/CXMPPCore.h>
 #include <xmpp/jid/CJid.h>
@@ -46,10 +43,10 @@ public:
 	void Attach(CXMPPCore* pXMPPCore);
 	void Detach();
 
-	void ConnectToSSH(const CJid& rRemoteJid, CRsaKey* pAuthServerKey);
+	void ConnectToSSH(const CJid& rRemoteJid);
 	void Disconnect();
 
-	void Login(const string& userName, const string& password);
+	void Login();
 	
 	void SetShellSize(u32 row, u32 column, u32 xpixel, u32 ypixel);
 	void SendData(CBuffer* pBuffer);
@@ -58,8 +55,6 @@ public:
 	const CJid& GetRemoteJid() const;
 
 private:
-	void SessionKeyExchange();
-	void SessionAuthServer(CRsaKey* pAuthServerKey);
 	void SessionAuthClient(const string& userName, const string& password);
 	void SessionShell();
 	
@@ -69,9 +64,6 @@ private:
 	CJid RemoteJid;
 	u16 channelId;
 	u16 shellSid;
-	CAes AesOnChannel;
-	CAes AesOnShell;
-	CRsaKey* pAuthServerKey;
 };
  
 class CXEPsshException : public CException

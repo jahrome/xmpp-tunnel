@@ -20,14 +20,12 @@
 
 #include <iostream>
 #include <string>
-#include <termios.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
 
 #include <common/CObject.h>
 #include <common/CException.h>
-#include <common/crypto/rsa/CRsaKey.h>
 #include <common/socket/tcp/CTCPAddress.h>
 #include <common/thread/CThread.h>
 
@@ -45,13 +43,31 @@
 
 #include <resox/CResox.h>
 
+#include <common/tun/tun.h>
+
+
 CResox* pResox;
 using namespace std;
 
 CResox::CResox()
 {
+}
+
+CResox::CResox(const string pAddress, const string pMask)
+{
+	char tun_name[] = "xmpp0";
+
 	pResox = this;
-	//signal(SIGINT,   InterceptSignal);
+
+	/* Connect to the device */
+	tun_fd = tun_alloc(tun_name, IFF_TUN | IFF_NO_PI);
+	set_ip(tun_name, pAddress.c_str(), pMask.c_str());
+
+	if(tun_fd < 0){
+		perror("Allocating interface");
+		exit(0);
+	}
+	cerr << "Created local network interface " << tun_name << endl;
 }
 
 CResox::~CResox()
@@ -67,7 +83,7 @@ void CResox::ConnectTo(const CJid& xmppJid, const CTCPAddress& rTCPAddress)
 	XMPPInstMsg.SendPresenceToAll("available", "", "0");
 }
 
-void CResox::ConnectToSSH(const CJid& sshJid, CRsaKey* pAuthServerKey)
+void CResox::ConnectToSSH(const CJid& sshJid)
 {
 	XEPdisco.Attach(&XMPPInstMsg);
 	XEPssh.Attach(&XMPPInstMsg);
@@ -86,38 +102,22 @@ void CResox::ConnectToSSH(const CJid& sshJid, CRsaKey* pAuthServerKey)
 	if(!isResoxFeature)
 	cerr << sshJid.GetFull() << " may not support xmpp-ssh " << endl;
 	
-	XEPssh.ConnectToSSH(sshJid, pAuthServerKey);
+	XEPssh.ConnectToSSH(sshJid);
 }
 
 
-void CResox::Login(const string& userName, const string& password)
+void CResox::Login()
 {
-	signal(SIGWINCH, InterceptSignal);
+	XEPssh.Login();
 
-	XEPssh.Login(userName, password);
-
-	termios old_tty;
-	termios new_tty;
-
-	tcgetattr(0, &old_tty);
-	tcgetattr(0, &new_tty);
-	
-	new_tty.c_lflag &= ~(ICANON | ECHO);
-	//new_tty.c_cc[VTIME] = 600 * 10;
-	new_tty.c_cc[VMIN] = 1;
-
-	tcsetattr(0, TCSANOW, &new_tty);
+	cerr << "Tunnel established" << endl;
 
 	try
 	{
-		// we send the current local shell size
-		InterceptSignal(SIGWINCH);
-		
 		ThreadInShellJob.Run(InShellJob, this);
 		ThreadOutShellJob.Run(OutShellJob, this);
 
 		ThreadInShellJob.Wait();
-		//ThreadOutShellJob.Wait();
 	}
 	
 	catch(exception& e)
@@ -127,8 +127,6 @@ void CResox::Login(const string& userName, const string& password)
 		#endif //__DEBUG__
 
 	}
-
-	tcsetattr(0, TCSANOW, &old_tty);
 }
 
 void CResox::StartRosterEvent(CRoster* pRoster)
@@ -150,7 +148,8 @@ bool CResox::OnRosterUpdated(CRoster* pRoster)
 void* CResox::InShellJob(void* pvThis) throw()
 {
 	CResox* pResox = (CResox*) pvThis;
-	
+	int nread;
+
 	try
 	{		
 		CBuffer DataBuffer;
@@ -158,23 +157,12 @@ void* CResox::InShellJob(void* pvThis) throw()
 		while(true)
 		{
 			pResox->XEPssh.ReceiveData(&DataBuffer);
-			u32 bufferSizeWrited = 0;
-
-			while(DataBuffer.GetBufferSize() > bufferSizeWrited)
-			{
-				int currentSizeWrited = write(1, DataBuffer.GetBuffer() + bufferSizeWrited, DataBuffer.GetBufferSize() - bufferSizeWrited);
-	
-				if(currentSizeWrited < 0)
-				{
-					pResox->ThreadOutShellJob.Stop();
-					pResox->XEPssh.Disconnect();
-					return NULL;
-				}
-			
-				bufferSizeWrited += currentSizeWrited;
+			nread = write(pResox->tun_fd, DataBuffer.GetBuffer(), DataBuffer.GetBufferSize());
+			if(nread < 0) {
+				perror("Write to interface");
+				close(pResox->tun_fd);
+				exit(1);
 			}
-
-			fflush(stdout);
 		}
 	}
 	
@@ -194,8 +182,19 @@ void* CResox::OutShellJob(void* pvThis) throw()
 	{	
 		CBuffer DataBuffer(1);
 		
-		while(read(0, DataBuffer.GetBuffer(), DataBuffer.GetBufferSize()) == 1)
-		pResox->XEPssh.SendData(&DataBuffer);
+		char buffer[2000];
+		int nread;
+
+		while ((nread = read(pResox->tun_fd,buffer,sizeof(buffer)))) {
+			if(nread < 0) {
+				perror("Reading from interface");
+				close(pResox->tun_fd);
+				exit(1);
+			}
+			DataBuffer.Create((u32)nread);
+			DataBuffer.Write((const u8*)buffer, (u32)nread);
+			pResox->XEPssh.SendData(&DataBuffer);
+		}
 
 		pResox->ThreadInShellJob.Stop();
 		pResox->XEPssh.Disconnect();
@@ -207,23 +206,6 @@ void* CResox::OutShellJob(void* pvThis) throw()
 		pResox->ThreadInShellJob.Stop();
 		pResox->XEPssh.Disconnect();
 		return NULL;
-	}
-}
-
-
-void CResox::InterceptSignal(int signal)
-{
-	if(signal == SIGWINCH)
-	{
-		struct winsize w;
-		if(ioctl(0, TIOCGWINSZ, &w) < 0)
-		return;
-		
-		pResox->XEPssh.SetShellSize(w.ws_row, w.ws_col, w.ws_xpixel, w.ws_ypixel);
-	}
-
-	if(signal == SIGINT)
-	{
 	}
 }
 

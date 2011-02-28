@@ -26,14 +26,10 @@
 
 #include <common/CException.h>
 #include <common/CObject.h>
-#include <common/crypto/aes/CAes.h>
-#include <common/crypto/rsa/CRsaKey.h>
 #include <common/thread/CThread.h>
 
 #include <xmpp/core/CXMPPCore.h>
 #include <xmpp/jid/CJid.h>
-#include <xmpp/xep/ssh/auth/CAuthentication.h>
-#include <xmpp/xep/ssh/virtualshell/CVirtualShell.h>
 #include <xmpp/xep/xibb/CXEPxibb.h>
 
 using namespace std;
@@ -47,20 +43,14 @@ private:
 		CJid Jid;
 		u16 localCid;
 		u16 shellSid;
-		CRsaKey* pServerAuthKey;
-		CAes AesOnChannel;
-		CAes AesOnShell;
-		CAuthentication Authentication;
-		CVirtualShell VirtualShell;
+		int TunFd;
 	};
 
 public:
 	CXEPsshd();
 	virtual ~CXEPsshd();
 
-	void SetServerAuthKey(CRsaKey* pServerAuthKey);
-
-	void Attach(CXMPPCore* pXMPPCore);
+	void Attach(CXMPPCore* pXMPPCore, int TunFd);
 	void Detach();
 
 protected:
@@ -73,9 +63,6 @@ private:
 	static void* InShellJob(void* pvSSessionParam) throw();
 	static void* OutShellJob(void* pvSSessionParam) throw();
 
-	static void SessionKeyExchange(SSessionParam* pSessionParam);
-	static void SessionAuthServer(SSessionParam* pSessionParam);
-	static void SessionAuthClient(SSessionParam* pSessionParam);
 	static void SessionShell(SSessionParam* pSessionParam);
 	
 private:
@@ -85,7 +72,7 @@ private:
 private:
 	CXMPPCore* pXMPPCore;
 	CXEPxibb XEPxibb;
-	CRsaKey* pServerAuthKey;
+	int TunFd;
 };
  
 class CXEPsshdException : public CException

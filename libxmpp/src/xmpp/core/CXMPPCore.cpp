@@ -592,9 +592,6 @@ void CXMPPCore::NegociateStarttls()
 
 		FeaturesStanza.AttachXMLNode(Stanza.DetachXMLNode());
 
-		//if(!FeaturesStanza.IsTLSRequired())
-		//throw CXMPPCoreException(CXMPPCoreException::XMPPCEC_NEGOCIATESTARTTLSERROR);
-
 		SendStanza(&StarttlsStanza);
 		ReceiveStanza(&Stanza);
 
