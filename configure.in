@@ -26,7 +26,7 @@ case "$host" in
 	CPPFLAGS="$CPPFLAGS -I../libresox/src"
 
 	LDFLAGS="$LDFLAGS -L../libresox/src -L../libresoxserver/src -L../libxmpp/src -L../libcommon/src"
-	LIBS="$LIBS -lresox -lresoxserver -lxmpp -lcommon -lexpat -lssl -lcrypto -lcrypt -lcurses -lpthread"
+	LIBS="$LIBS -lresox -lresoxserver -lxmpp -lcommon -lexpat -lssl -lcrypto -lcurses -lpthread"
 	;;
 
 arm-*-*)

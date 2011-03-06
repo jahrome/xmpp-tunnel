@@ -40,7 +40,7 @@ int main(int argc, char** argv)
 	CTCPAddress HostAddress;
 	CSSHConfig SSHConfig;
 
-	string fileName = "xmpp-tunnel.xml";
+	string fileName = "/etc/xmpp-tunnel.xml";
 
 	try
 	{

@@ -35,7 +35,7 @@
 
 int main(int argc, char** argv)
 {
-	string fileName = "xmpp-tunneld.xml";
+	string fileName = "/etc/xmpp-tunneld.xml";
 	CSSHConfig SSHConfig;
 	CJid Jid;
 	CTCPAddress TCPAddress;	

@@ -15,13 +15,11 @@ include /usr/share/cdbs/1/class/autotools.mk
 VER=$(shell dpkg-parsechangelog | sed -rne 's,^Version: ([^-]+).*,\1,p')
 get-orig-source:
 	rm -rf xmpp-tunnel-$(VER).orig
-	git clone http://github.com/jahrome/xmpp-tunnel xmpp-tunnel-$(VER).orig
-	cd xmpp-tunnel-$(VER).orig
-	rm -r xmpp-tunnel-$(VER).orig/.git
+	git clone http://github.com/jahrome/xmpp-tunnel xmpp-tunnel-$(VER)
+	rm -fr xmpp-tunnel-$(VER)/.git xmpp-tunnel-$(VER)/debian
+	cd xmpp-tunnel-$(VER) && autoreconf
+	find -name autom4te.cache -exec rm -rf {} \; -prune
 	GZIP=--best tar -cz --owner root --group root --mode a+rX \
 			-f xmpp-tunnel_$(VER).orig.tar.gz \
-			xmpp-tunnel-$(VER).orig
-	rm -r xmpp-tunnel-$(VER).orig
-
-makebuilddir/xmpp-tunnel::
-	autoreconf
+			xmpp-tunnel-$(VER)
+	rm -r xmpp-tunnel-$(VER)

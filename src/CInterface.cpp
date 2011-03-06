@@ -105,7 +105,7 @@ const CJid& CInterface::SelectHost()
 			index++;
 		}
 		
-		if(key == 'c')
+		if(key == 'KEY_RIGHT')
 		{
 			Jid = Roster.GetItem(index).GetJid();
 			pResox->StopRosterEvent();	
