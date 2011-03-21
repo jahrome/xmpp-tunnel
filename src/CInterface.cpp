@@ -105,7 +105,7 @@ const CJid& CInterface::SelectHost()
 			index++;
 		}
 		
-		if(key == 'KEY_RIGHT')
+		if(key == 'c')
 		{
 			Jid = Roster.GetItem(index).GetJid();
 			pResox->StopRosterEvent();	
@@ -162,7 +162,7 @@ void* CInterface::DisplayHostJob(void* pvThis) throw()
 		pInterface->MutexOnDisplay.Lock();
 		move(0, 0);
 		mvwprintw(pInterface->pWinHostList, 0, 0, "----------------- [Roster List  (%d)] -----------------\n", pInterface->Roster.GetNumItem());
-		mvwprintw(pInterface->pWinHostList, 1, 0, "To select a Jid use up and down key. To Login right key\n");
+		mvwprintw(pInterface->pWinHostList, 1, 0, "To select a Jid use up and down key. To login press 'c' key\n");
 		wrefresh(pInterface->pMainWin);
 		wrefresh(pInterface->pWinHostList);
 
