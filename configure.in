@@ -18,6 +18,17 @@ AC_CONFIG_SUBDIRS(libcommon libxmpp libresoxserver libresox)
 # Checks for libraries.
 
 case "$host" in
+arm-*-*-*)
+	CPPFLAGS="$CPPFLAGS -D__LINUX__ -D__ANDROID__"
+	CPPFLAGS="$CPPFLAGS -I../libcommon/src"
+	CPPFLAGS="$CPPFLAGS -I../libxmpp/src"
+	CPPFLAGS="$CPPFLAGS -I../libresoxserver/src"
+	CPPFLAGS="$CPPFLAGS -I../libresox/src"
+
+	LDFLAGS="$LDFLAGS -L../libresox/src -L../libresoxserver/src -L../libxmpp/src -L../libcommon/src"
+	LIBS="$LIBS -lresox -lresoxserver -lxmpp -lcommon -lexpat -lssl -lcrypto -lncurses"
+	;;
+
 *-*-linux*)
 	CPPFLAGS="$CPPFLAGS -Wall -ansi -pedantic -D__LINUX__"
 	CPPFLAGS="$CPPFLAGS -I../libcommon/src"
@@ -27,17 +38,6 @@ case "$host" in
 
 	LDFLAGS="$LDFLAGS -L../libresox/src -L../libresoxserver/src -L../libxmpp/src -L../libcommon/src"
 	LIBS="$LIBS -lresox -lresoxserver -lxmpp -lcommon -lexpat -lssl -lcrypto -lcurses -lpthread"
-	;;
-
-arm-*-*)
-	CPPFLAGS="$CPPFLAGS -D__LINUX__ -D__ANDROID__"
-	CPPFLAGS="$CPPFLAGS -I../libcommon/src"
-	CPPFLAGS="$CPPFLAGS -I../libxmpp/src"
-	CPPFLAGS="$CPPFLAGS -I../libresoxserver/src"
-	CPPFLAGS="$CPPFLAGS -I../libresox/src"
-
-	LDFLAGS="$LDFLAGS -L../libresox/src -L../libresoxserver/src -L../libxmpp/src -L../libcommon/src"
-	LIBS="$LIBS -lresox -lresoxserver -lxmpp -lcommon -lexpat -lssl -lcrypto -lncurses"
 	;;
 
 *-*-*darwin*)
